@@ -25,46 +25,60 @@ with st.form("expense_form"):
 if submitted:
     date_str = date.strftime('%Y-%m-%d')
     
-    # Reload dataframe
     df = pd.read_excel(EXCEL_FILE)
     
-    # Check if the category exists; if not, create it
     if category not in df.columns:
-        df[category] = None  # Add the category column with initial value None
+        df[category] = None
     
-    # If the date exists in the DataFrame, add the new expense to the existing one
     if date_str in df['Date'].astype(str).values:
         current_amount = df.loc[df['Date'].astype(str) == date_str, category].values
         if current_amount.size > 0 and pd.notna(current_amount[0]):
-            # Add the new amount to the existing amount
             df.loc[df['Date'].astype(str) == date_str, category] += amount
         else:
-            # If no amount exists (NaN), set the new amount
             df.loc[df['Date'].astype(str) == date_str, category] = amount
     else:
-        # Add a new row if the date does not exist
         new_row = {col: None for col in df.columns}
         new_row['Date'] = date_str
         new_row[category] = amount
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     
-    # Combine rows with the same date into one row
     df = df.groupby('Date', as_index=False).sum()
-
-    # Reorder columns before saving (Date first)
     cols = ['Date'] + [col for col in df.columns if col != 'Date']
     df = df[cols]
-    
-    # Save updated DataFrame to Excel
     df.to_excel(EXCEL_FILE, index=False)
     
     st.success(f"Added {amount} to {category} on {date_str}")
-    st.rerun()  # refresh view
+    st.rerun()
+
+# --- Delete Expense Section ---
+st.subheader("Delete Expense")
+
+if len(df) > 0:
+    delete_date = st.date_input("Select Date to Delete Expense", key='delete_date')
+    delete_category = st.selectbox("Select Category to Delete", [col for col in df.columns if col != 'Date'])
+    delete_button = st.button("Delete Expense")
+
+    if delete_button:
+        delete_date_str = delete_date.strftime('%Y-%m-%d')
+        if delete_date_str in df['Date'].astype(str).values:
+            df.loc[df['Date'].astype(str) == delete_date_str, delete_category] = None
+            
+            # Optionally: if all categories are None for this date, drop the row
+            row_values = df.loc[df['Date'].astype(str) == delete_date_str, df.columns != 'Date']
+            if row_values.isnull().all(axis=1).values[0]:
+                df = df[df['Date'].astype(str) != delete_date_str]
+                st.info(f"Deleted entire row for {delete_date_str} as all categories were empty.")
+            else:
+                st.success(f"Deleted {delete_category} expense on {delete_date_str}")
+            
+            df.to_excel(EXCEL_FILE, index=False)
+            st.rerun()
+        else:
+            st.warning(f"No record found for {delete_date_str}")
 
 # --- Show current table ---
 st.subheader("Current Expenses")
 
-# --- Compute totals for each category ---
 if len(df) > 0:
     category_cols = [col for col in df.columns if col != 'Date']
     totals = {col: df[col].sum(skipna=True) for col in category_cols}
@@ -74,27 +88,20 @@ if len(df) > 0:
 else:
     df_display = df
 
-# Ensure Date column is first and convert Date column to datetime
-df_display['Date'] = pd.to_datetime(df_display['Date'], errors='coerce')  # Convert Date to datetime
+df_display['Date'] = pd.to_datetime(df_display['Date'], errors='coerce')
 df_display = df_display.sort_values(by='Date', ascending=True).reset_index(drop=True)
 
-# Ensure Date column is first
 cols = ['Date'] + [col for col in df_display.columns if col != 'Date']
 df_display = df_display[cols]
 
-st.dataframe(df_display.fillna(""))  # display without NaN
+st.dataframe(df_display.fillna(""))
 
 # --- Analytics Graph: Expense per Category (Pie Chart) ---
 st.subheader("Expense Analytics (Pie Chart)")
 
 if len(df) > 0:
-    # Group by categories and sum the expenses, avoiding NaN values
     category_sums = {col: df[col].sum(skipna=True) for col in df.columns if col != 'Date'}
-    
-    # Create DataFrame for plotting
     category_df = pd.DataFrame(list(category_sums.items()), columns=['Category', 'Total Expense'])
-    
-    # Plotting the pie chart
     plt.figure(figsize=(8, 8))
     plt.pie(category_df['Total Expense'], labels=category_df['Category'], autopct='%1.1f%%', startangle=90)
     plt.title("Expenses by Category")

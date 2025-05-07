@@ -39,19 +39,16 @@ with st.form("expense_form"):
 if submitted:
     date_str = date.strftime('%Y-%m-%d')
     
-    # Re-initialize DB connection after form submission
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
     # Insert expense into the database
     cursor.execute("""
     INSERT INTO expenses (date, category, amount)
     VALUES (?, ?, ?)
     """, (date_str, category, amount))
     conn.commit()
-
+    
     st.success(f"Added {amount} to {category} on {date_str}")
-    # No need for st.experimental_rerun(), page will reload automatically
+    # Removed st.experimental_rerun() since page will reload automatically
+
 
 # --- Delete Expense Section ---
 st.subheader("Delete Expense")

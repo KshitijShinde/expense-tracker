@@ -8,14 +8,15 @@ import seaborn as sns
 # --- Setup SQLite Database ---
 DB_FILE = "expenses.db"
 
-# Function to get database connection
-def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
-    return conn
+# Ensure the database file exists
+if not os.path.exists(DB_FILE):
+    open(DB_FILE, 'w').close()
 
-# Create table if not exists (run this once to set up)
-conn = get_db_connection()
+# Initialize connection to the SQLite database with check_same_thread=False for multi-threading compatibility
+conn = sqlite3.connect(DB_FILE, check_same_thread=False)
 cursor = conn.cursor()
+
+# Create table if not exists
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,7 +26,6 @@ CREATE TABLE IF NOT EXISTS expenses (
 )
 """)
 conn.commit()
-conn.close()
 
 st.title("Expense Tracker 📊")
 
@@ -47,15 +47,12 @@ if submitted:
     conn.commit()
     
     st.success(f"Added {amount} to {category} on {date_str}")
-    # Removed st.experimental_rerun() since page will reload automatically
-
+    # No need for st.experimental_rerun(), page will reload automatically
 
 # --- Delete Expense Section ---
 st.subheader("Delete Expense")
 
 # Fetch all expenses for selection
-conn = get_db_connection()
-cursor = conn.cursor()
 cursor.execute("SELECT DISTINCT date FROM expenses")
 dates = [row[0] for row in cursor.fetchall()]
 

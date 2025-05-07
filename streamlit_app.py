@@ -63,6 +63,25 @@ if data:
     
     # Display the pivoted data with the total row
     st.dataframe(df_pivoted)
+
+    # Option to delete expenses
+    st.subheader("Delete an Expense")
+    expense_to_delete = st.selectbox("Select an Expense to Delete", df['Date'] + " | " + df['Category'] + " | " + df['Amount'].astype(str))
+    
+    if st.button("Delete Selected Expense"):
+        # Extract the date and category from the selected item
+        date_category_amount = expense_to_delete.split(" | ")
+        date_to_delete = date_category_amount[0]
+        category_to_delete = date_category_amount[1]
+        amount_to_delete = float(date_category_amount[2])
+
+        # Delete the selected expense from the database
+        cursor.execute("""
+        DELETE FROM expenses WHERE date = ? AND category = ? AND amount = ?
+        """, (date_to_delete, category_to_delete, amount_to_delete))
+        conn.commit()
+        
+        st.success(f"Deleted expense {expense_to_delete}")
 else:
     st.info("No expenses to display.")
 

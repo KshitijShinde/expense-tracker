@@ -51,7 +51,7 @@ if submitted:
     conn.commit()
 
     st.success(f"Added {amount} to {category} on {date_str}")
-    st.experimental_rerun()  # Optional: You can remove this if you want to avoid an immediate rerun
+    # No need for st.experimental_rerun(), page will reload automatically
 
 # --- Delete Expense Section ---
 st.subheader("Delete Expense")
@@ -76,7 +76,7 @@ if dates:
         conn.commit()
         
         st.success(f"Deleted expense for {delete_category} on {delete_date_str}")
-        st.experimental_rerun()
+        # No need for st.experimental_rerun(), page will reload automatically
 
 # --- Delete Entire Category Section ---
 st.subheader("Delete Entire Category")
@@ -93,7 +93,7 @@ if categories:
         cursor.execute("DELETE FROM expenses WHERE category = ?", (selected_category_to_delete,))
         conn.commit()
         st.success(f"Category '{selected_category_to_delete}' has been permanently deleted.")
-        st.experimental_rerun()
+        # No need for st.experimental_rerun(), page will reload automatically
 else:
     st.info("No categories available to delete.")
 

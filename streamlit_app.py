@@ -58,7 +58,10 @@ if data:
     # Pivot the data: Date as rows, Category as columns, and Amount as values
     df_pivoted = df.pivot_table(index="Date", columns="Category", values="Amount", aggfunc="sum", fill_value=0)
 
-    # Display the pivoted data
+    # Add a total row at the bottom
+    df_pivoted.loc["Total"] = df_pivoted.sum(axis=0)
+    
+    # Display the pivoted data with the total row
     st.dataframe(df_pivoted)
 else:
     st.info("No expenses to display.")
@@ -74,4 +77,3 @@ if data:
     plt.pie(category_sums['Amount'], labels=category_sums['Category'], autopct='%1.1f%%', startangle=90)
     plt.title("Expenses by Category")
     st.pyplot(plt)
-

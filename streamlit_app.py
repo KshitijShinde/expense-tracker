@@ -3,6 +3,7 @@ import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, firestore
 import matplotlib.pyplot as plt  # Make sure plt is imported
+import io
 
 # Initialize Firebase
 from firebase_config import db  # Import db from firebase_config
@@ -89,3 +90,22 @@ if expense_data:
     plt.pie(category_sums['amount'], labels=category_sums['category'], autopct='%1.1f%%', startangle=90)
     plt.title("Expenses by Category")
     st.pyplot(plt)
+
+    # --- Option to download expenses as Excel ---
+    def convert_df_to_excel(df):
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Expenses')
+        processed_data = output.getvalue()
+        return processed_data
+
+    # Convert expenses dataframe to Excel
+    excel_data = convert_df_to_excel(df)
+
+    # Download button
+    st.download_button(
+        label="📥 Download Expenses as Excel",
+        data=excel_data,
+        file_name='expenses.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )

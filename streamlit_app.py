@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime
+import matplotlib.pyplot as plt  # Make sure plt is imported
 
 # Initialize Firebase
-import firebase_config  # This will initialize Firebase with firebase_credentials.json
-db = firebase_config.db
+from firebase_config import db  # Import db from firebase_config
 
 # Streamlit app title
 st.title("Expense Tracker 📊")

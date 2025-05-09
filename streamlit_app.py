@@ -5,17 +5,29 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # --- Connect to PostgreSQL using Streamlit Secrets ---
+
+import os
+
+# Get environment variables for database connection
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+
+# Test connection to PostgreSQL
 try:
     conn = psycopg2.connect(
-        host=st.secrets["DB_HOST"],
-        port=st.secrets["DB_PORT"],
-        dbname=st.secrets["DB_NAME"],
-        user=st.secrets["DB_USER"],
-        password=st.secrets["DB_PASSWORD"]
+        host=DB_HOST,
+        port=DB_PORT,
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
     )
     st.success("Successfully connected to the database!")
-except Exception as e:
+except psycopg2.OperationalError as e:
     st.error(f"Error connecting to the database: {e}")
+)
 
 # Initialize cursor
 cursor = conn.cursor()

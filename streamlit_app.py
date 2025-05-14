@@ -33,6 +33,7 @@ with st.form("expense_form"):
     date = st.date_input("Select Expense Date")
     category = st.text_input("Expense Category").strip().title()
     amount = st.number_input("Expense Amount", min_value=0.0, format="%.2f")
+    description = st.text_area("Add a Description (optional)")
     submitted = st.form_submit_button("Save Expense")
 
 if submitted:
@@ -40,7 +41,8 @@ if submitted:
     db.collection('expenses').add({
         'date': date_str,
         'category': category,
-        'amount': amount
+        'amount': amount,
+        'description': description
     })
     st.success(f"Added ₹{amount} to {category} on {date_str}")
 
@@ -98,6 +100,22 @@ if not df_exp.empty:
             db.collection('expenses').document(doc.id).delete()
         st.success(f"Deleted expense: {expense_to_delete}")
 
+# --- View Expense Details ---
+if not df_exp.empty:
+    st.subheader("🔍 View Expense Details with Description")
+    df_exp_sorted = df_exp.sort_values(by='date', ascending=False)
+    df_exp_sorted["display"] = df_exp_sorted.apply(
+        lambda row: f"{row['date']} | {row['category']} | ₹{row['amount']}", axis=1)
+
+    selected_expense = st.selectbox("Select an expense", df_exp_sorted["display"])
+
+    selected_row = df_exp_sorted[df_exp_sorted["display"] == selected_expense].iloc[0]
+    with st.expander("📄 Expense Details"):
+        st.write(f"**Date:** {selected_row['date']}")
+        st.write(f"**Category:** {selected_row['category']}")
+        st.write(f"**Amount:** ₹{selected_row['amount']}")
+        st.write(f"**Description:** {selected_row.get('description', 'No description provided')}")
+
 # --- Pie Chart ---
 if not df_exp.empty:
     st.subheader("Expense Analytics (Pie Chart)")
@@ -115,7 +133,11 @@ def convert_df_to_excel(df):
     return output.getvalue()
 
 if not df_exp.empty:
-    excel_data = convert_df_to_excel(df_exp)
+    if 'description' in df_exp.columns:
+        columns_to_download = ["date", "category", "amount", "description"]
+    else:
+        columns_to_download = ["date", "category", "amount"]
+    excel_data = convert_df_to_excel(df_exp[columns_to_download])
     st.download_button(
         label="📥 Download Expenses as Excel",
         data=excel_data,

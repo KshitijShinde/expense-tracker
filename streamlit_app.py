@@ -125,6 +125,34 @@ if not df_exp.empty:
     plt.title("Expenses by Category")
     st.pyplot(plt)
 
+# --- Monthly Report and Bar Chart ---
+if not df_exp.empty:
+    st.subheader("📅 Monthly Expense Report")
+
+    # Convert date column to datetime if not already
+    df_exp["date"] = pd.to_datetime(df_exp["date"])
+
+    # Extract month and year for grouping
+    df_exp["month"] = df_exp["date"].dt.to_period("M").astype(str)
+
+    # Group by month and category
+    monthly_summary = df_exp.groupby(["month", "category"])["amount"].sum().reset_index()
+
+    # Pivot for bar chart
+    pivot_month = monthly_summary.pivot(index="month", columns="category", values="amount").fillna(0)
+
+    # Show as table
+    st.dataframe(pivot_month)
+
+    # Plot bar chart
+    st.subheader("📊 Bar Chart: Monthly Expenses by Category")
+    pivot_month.plot(kind="bar", stacked=True, figsize=(10, 6))
+    plt.ylabel("Amount (₹)")
+    plt.xlabel("Month")
+    plt.title("Monthly Expenses")
+    st.pyplot(plt)
+
+
 # --- Download as Excel ---
 def convert_df_to_excel(df):
     output = io.BytesIO()

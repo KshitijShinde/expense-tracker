@@ -60,9 +60,7 @@ income_data = [i.to_dict() for i in incomes]
 # --- DataFrames ---
 if expense_data:
     df_exp = pd.DataFrame(expense_data)
-    df_exp_pivoted = df_exp.pivot_table(index="date", columns="category", values="amount", aggfunc="sum", fill_value=0)
-    df_exp_pivoted.loc["Total"] = df_exp_pivoted.sum()
-    st.dataframe(df_exp_pivoted)
+    st.dataframe(df_exp[["date", "category", "description", "amount"]].sort_values(by="date"))
 else:
     df_exp = pd.DataFrame(columns=["date", "category", "description", "amount"])
     st.info("No expenses recorded yet.")
@@ -99,13 +97,6 @@ if not df_exp.empty:
         for doc in query.stream():
             db.collection('expenses').document(doc.id).delete()
         st.success(f"Deleted expense: {expense_to_delete}")
-
-# --- Expense List with Expandable Descriptions ---
-if not df_exp.empty:
-    st.subheader("📋 Expense List with Descriptions")
-    for idx, row in df_exp.iterrows():
-        with st.expander(f"{row['date']} | ₹{row['amount']} | {row['category']}"):
-            st.write(f"**Description:** {row.get('description', 'No description provided')}")
 
 # --- Pie Chart ---
 if not df_exp.empty:

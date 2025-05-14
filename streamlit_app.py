@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import io
 
 # Initialize Firebase
-from firebase_config import db  # Make sure db is imported from firebase_config
+from firebase_config import db  # Ensure this is correctly configured
 
 st.title("Expense Tracker 📊")
 
@@ -32,6 +32,7 @@ st.subheader("Add Expense")
 with st.form("expense_form"):
     date = st.date_input("Select Expense Date")
     category = st.text_input("Expense Category").strip().title()
+    description = st.text_input("Expense Description (e.g., Food at McDonald's)").strip()
     amount = st.number_input("Expense Amount", min_value=0.0, format="%.2f")
     submitted = st.form_submit_button("Save Expense")
 
@@ -40,9 +41,10 @@ if submitted:
     db.collection('expenses').add({
         'date': date_str,
         'category': category,
+        'description': description,
         'amount': amount
     })
-    st.success(f"Added ₹{amount} to {category} on {date_str}")
+    st.success(f"Added ₹{amount} to {category} on {date_str} - {description}")
 
 # --- Fetch Expenses ---
 st.subheader("Current Expenses")
@@ -58,11 +60,13 @@ income_data = [i.to_dict() for i in incomes]
 # --- DataFrames ---
 if expense_data:
     df_exp = pd.DataFrame(expense_data)
+    if 'description' not in df_exp.columns:
+        df_exp['description'] = ""
     df_exp_pivoted = df_exp.pivot_table(index="date", columns="category", values="amount", aggfunc="sum", fill_value=0)
     df_exp_pivoted.loc["Total"] = df_exp_pivoted.sum()
     st.dataframe(df_exp_pivoted)
 else:
-    df_exp = pd.DataFrame(columns=["date", "category", "amount"])
+    df_exp = pd.DataFrame(columns=["date", "category", "amount", "description"])
     st.info("No expenses recorded yet.")
 
 # --- Show Income Summary ---
@@ -86,14 +90,15 @@ col3.metric("Money Remaining", f"₹{remaining_money:.2f}")
 # --- Delete Expense ---
 if not df_exp.empty:
     st.subheader("Delete an Expense")
-    df_exp["display"] = df_exp["date"] + " | " + df_exp["category"] + " | " + df_exp["amount"].astype(str)
+    df_exp["display"] = df_exp["date"] + " | " + df_exp["category"] + " | ₹" + df_exp["amount"].astype(str) + " | " + df_exp["description"]
     expense_to_delete = st.selectbox("Select an Expense", df_exp["display"])
     if st.button("Delete Selected Expense"):
         parts = expense_to_delete.split(" | ")
         query = db.collection('expenses') \
                   .where('date', '==', parts[0]) \
                   .where('category', '==', parts[1]) \
-                  .where('amount', '==', float(parts[2]))
+                  .where('amount', '==', float(parts[2].replace("₹", ""))) \
+                  .where('description', '==', parts[3])
         for doc in query.stream():
             db.collection('expenses').document(doc.id).delete()
         st.success(f"Deleted expense: {expense_to_delete}")

@@ -31,7 +31,7 @@ if income_submitted:
 st.subheader("Add Expense")
 with st.form("expense_form"):
     date = st.date_input("Select Expense Date")
-    category = st.text_input("Expense Category").strip().title()
+    category = st.text_input("Expense Category")
     amount = st.number_input("Expense Amount", min_value=0.0, format="%.2f")
     description = st.text_area("Add a Description (optional)")
     submitted = st.form_submit_button("Save Expense")

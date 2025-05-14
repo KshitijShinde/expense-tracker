@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import io
 
 # Initialize Firebase
-from firebase_config import db  # Ensure this imports Firestore DB instance
+from firebase_config import db  # Make sure db is imported from firebase_config
 
 st.title("Expense Tracker 📊")
 
@@ -30,10 +30,9 @@ if income_submitted:
 # --- Input Form to Add Expenses ---
 st.subheader("Add Expense")
 with st.form("expense_form"):
-    date = st.date_input("Select Expense Date", key="expense_date")
-    category = st.text_input("Expense Category", key="expense_category").strip().title()
-    description = st.text_input("Description (e.g., Grocery at Walmart)", key="expense_desc")
-    amount = st.number_input("Expense Amount", min_value=0.0, format="%.2f", key="expense_amount")
+    date = st.date_input("Select Expense Date")
+    category = st.text_input("Expense Category").strip().title()
+    amount = st.number_input("Expense Amount", min_value=0.0, format="%.2f")
     submitted = st.form_submit_button("Save Expense")
 
 if submitted:
@@ -41,10 +40,9 @@ if submitted:
     db.collection('expenses').add({
         'date': date_str,
         'category': category,
-        'description': description,
         'amount': amount
     })
-    st.success(f"Added ₹{amount} to {category} on {date_str} — {description}")
+    st.success(f"Added ₹{amount} to {category} on {date_str}")
 
 # --- Fetch Expenses ---
 st.subheader("Current Expenses")
@@ -60,9 +58,11 @@ income_data = [i.to_dict() for i in incomes]
 # --- DataFrames ---
 if expense_data:
     df_exp = pd.DataFrame(expense_data)
-    st.dataframe(df_exp[["date", "category", "description", "amount"]].sort_values(by="date"))
+    df_exp_pivoted = df_exp.pivot_table(index="date", columns="category", values="amount", aggfunc="sum", fill_value=0)
+    df_exp_pivoted.loc["Total"] = df_exp_pivoted.sum()
+    st.dataframe(df_exp_pivoted)
 else:
-    df_exp = pd.DataFrame(columns=["date", "category", "description", "amount"])
+    df_exp = pd.DataFrame(columns=["date", "category", "amount"])
     st.info("No expenses recorded yet.")
 
 # --- Show Income Summary ---
